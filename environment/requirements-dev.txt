@@ -1,0 +1,17 @@
+# Dependency to facilitate the development of the project
+
+# Pre-commit for git hooks
+pre-commit==3.7.1
+# Security scanning
+detect-secrets==1.4.0
+bandit==1.7.8
+# Code formatting and linting
+isort==5.13.2
+# Flake8 packages to lint the code
+flake8==7.0.0
+# Black packages to format the code
+black==24.4.2
+# Pytest packages to run tests
+pytest==8.2.2
+# Jupyter packages to create a kernel for the virtual environment
+ipykernel==6.29.4

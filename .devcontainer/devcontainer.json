@@ -1,0 +1,40 @@
+{
+  "name": "Eval Workbook Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "azure-cli": "latest"
+  },
+  "mounts": [
+    "source=conda-envs,target=/opt/conda/envs,type=volume"
+  ],
+  "postCreateCommand": "bash .devcontainer/setup-env.sh",
+  "containerEnv": {
+    "PYTHONPATH": "/workspaces/eval/src"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/opt/conda/envs/eval/bin/python",
+        "[python]": {
+          "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+          },
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.formatOnSave": true,
+          "files.trimTrailingWhitespace": true
+        }
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.isort",
+        "ms-python.flake8",
+        "ms-python.black-formatter"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}

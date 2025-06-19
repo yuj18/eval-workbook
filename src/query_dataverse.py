@@ -38,3 +38,6 @@ data = entity.read(
 print(f"Name: {data['name']}")
 print(f"Description: {data['description']}")
 print(f"Data: {data['data']}")
+
+# Close the client session
+session.close()

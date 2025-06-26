@@ -128,43 +128,34 @@ def evaluate_routing(
 
 if __name__ == "__main__":
 
-    eval_data = [
-        # ordered match
-        {
-            "output": ["banking_agent"],
-            "reference_output": ["banking_agent"],
-        },
-        # unordered match
-        {
-            "output": ["banking_agent", "credit_card_agent"],
-            "reference_output": ["credit_card_agent", "banking_agent"],
-        },
-        # high precision, low recall
-        {
-            "output": ["banking_agent"],
-            "reference_output": ["banking_agent", "credit_card_agent"],
-        },
-        # low precision, high recall
-        {
-            "output": ["banking_agent", "credit_card_agent", "insurance_agent"],
-            "reference_output": ["insurance_agent", "banking_agent"],
-        },
-        # repeat elements in reference output
-        {
-            "output": ["banking_agent", "credit_card_agent"],
-            "reference_output": ["banking_agent", "credit_card_agent", "banking_agent"],
-        },
-        # repeat elements in output
-        {
-            "output": ["banking_agent", "credit_card_agent", "banking_agent"],
-            "reference_output": ["banking_agent", "credit_card_agent"],
-        },
-    ]
+    # Read eval data in the JSON format (list of dictionaries)
+    import json
+
+    eval_data = []
+    eval_file = "eval_data.json"
+    with open(eval_file, "r") as file:
+        eval_data = json.load(file)
+
+    # Initialize aggregates
+    ordered_total = 0
+    unordered_total = 0
+    superset_total = 0
+    subset_total = 0
+    precision_total = 0.0
+    recall_total = 0.0
+    n = len(eval_data)
 
     for data in eval_data:
         output = data["output"]
         reference_output = data["reference_output"]
         results = evaluate_routing(output, reference_output)
+        ordered_total += results["ordered_match"]
+        unordered_total += results["unordered_match"]
+        superset_total += results["superset_match"]
+        subset_total += results["subset_match"]
+        precision_total += results["precision"]
+        recall_total += results["recall"]
+        print(f"Query: {data.get('query', 'N/A')}")
         print(f"Output: {output}")
         print(f"Reference Output: {reference_output}")
         print("Evaluation Results:")
@@ -172,3 +163,45 @@ if __name__ == "__main__":
             print(f"  {metric}: {score}")
         print()
         print("-" * 40)
+
+    # Calculate per-label precision and recall
+    from collections import defaultdict
+
+    label_stats = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0})
+    all_labels = set()
+    for data in eval_data:
+        output = data["output"]
+        reference_output = data["reference_output"]
+        output_set = set(output)
+        reference_set = set(reference_output)
+        all_labels.update(output_set)
+        all_labels.update(reference_set)
+        for label in output_set:
+            if label in reference_set:
+                label_stats[label]["tp"] += 1
+            else:
+                label_stats[label]["fp"] += 1
+        for label in reference_set:
+            if label not in output_set:
+                label_stats[label]["fn"] += 1
+
+    if n > 0:
+        print("Aggregate Results:")
+        print(f"  Total queries evaluated: {n}")
+        print(f"  ordered_match rate: {ordered_total / n * 100:.1f}%")
+        print(f"  unordered_match rate: {unordered_total / n * 100:.1f}%")
+        print(f"  superset_match rate: {superset_total / n * 100:.1f}%")
+        print(f"  subset_match rate: {subset_total / n * 100:.1f}%")
+        print(f"  mean precision: {precision_total / n:.2f}")
+        print(f"  mean recall: {recall_total / n:.2f}")
+        print("\nPer-label precision and recall:")
+        for label in sorted(all_labels):
+            tp = label_stats[label]["tp"]
+            fp = label_stats[label]["fp"]
+            fn = label_stats[label]["fn"]
+            label_precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+            label_recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+            print(
+                f"  {label}: precision={label_precision:.2f}, "
+                f"recall={label_recall:.2f}"
+            )

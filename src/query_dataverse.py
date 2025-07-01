@@ -26,9 +26,9 @@ session.auth = auth
 # Instantiate DataverseClient
 client = DataverseClient(session=session, environment_url=environment_url)
 
-# ------------------------------------------------------------------------
-# Example 1: Read bot component (e.g. agent) description and specification
-# ------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Example 1a: Read bot component (e.g. agent) description and specification
+# --------------------------------------------------------------------------
 
 # Instantiate interface to the entity
 # https://learn.microsoft.com/en-us/power-apps/developer/data-platform/webapi/reference/bot_botcomponent
@@ -44,6 +44,39 @@ print("\n------------------------- Bot Component -------------------------")
 print(f"\nName: {data['name']}")
 print(f"\nDescription: {data['description']}")
 print(f"\nSpecification: {data['data'][:1500]}\n...")
+
+
+# --------------------------------------------------------------------------
+# Example 1b: Read descriptions and specifications of a principal agent
+# and its sub-agents
+# --------------------------------------------------------------------------
+
+# Read principal agent id
+principal_agent_name = os.getenv("PRINCIPAL_AGENT_NAME")
+entity = client.entity(logical_name="bot")
+data = entity.read(
+    select=["name", "botid"],
+    filter=f"name eq '{principal_agent_name}'",
+)[0]
+
+principal_agent_id = data["botid"]
+
+# Extract specification of the principal agent as well as
+# it attached sub-agents.
+entity = client.entity(logical_name="botcomponent")
+
+# Read data of the principal agent and its child agents.
+data = entity.read(
+    select=["name", "description", "schemaname", "data"],
+    filter=f"((_parentbotid_value eq '{principal_agent_id}') and startswith(data, 'kind: AgentDialog')) or (name eq '{principal_agent_name}')",  # noqa
+)
+
+for item_index, item in enumerate(data):
+    print(f"\n--------------------- Bot Component {item_index} -----------------------")
+    print(f"\nName: {item['name']}")
+    print(f"\nSchema Name: {item['schemaname']}")
+    print(f"\nDescription: {item['description']}")
+    print(f"\nSpecification: {item['data'][:1500]}\n...")
 
 
 # --------------------------------------------

@@ -109,12 +109,12 @@ class MCSAgent:
 
     async def _poll_for_response(self, session: aiohttp.ClientSession):
         """
-        Poll for the bot's response in the conversation.
+        Poll for the agent response.
         https://learn.microsoft.com/en-us/azure/bot-service/rest-api/bot-framework-rest-direct-line-3-0-receive-activities
         Args:
             session (aiohttp.ClientSession): The session to use for the request.
         Returns:
-            dict: A dictionary containing the full response, the bot's response,
+            dict: A dictionary containing the full response, the agent response,
             and the processing time.
         """
         if self._watermark is None:

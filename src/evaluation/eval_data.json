@@ -1,0 +1,55 @@
+[
+    {
+        "query": "can you help me learn about food chain and also quiz me? and can you also create a story about it?",
+        "output": [
+            "UniversalSearchTool",
+            "QuizAgent",
+            "StoryAgent"
+        ],
+        "reference_output": [
+            "UniversalSearchTool",
+            "StoryAgent",
+            "QuizAgent"
+        ]
+    },
+    {
+        "query": "can you create a story about solar system?",
+        "output": [
+            "StoryAgent"
+        ],
+        "reference_output": [
+            "StoryAgent"
+        ]
+    },
+    {
+        "query": "can you share some science fun facts?",
+        "output": [
+            "FunFactAgent"
+        ],
+        "reference_output": [
+            "UniversalSearchTool"
+        ]
+    },
+    {
+        "query": "can you share some science fun fact about water?",
+        "output": [
+            "FunFactAgent",
+            "UniversalSearchTool"
+        ],
+        "reference_output": [
+            "FunFactAgent"
+        ]
+    },
+    {
+        "query": "can you share some science fun fact about electricity? and also quiz me?",
+        "output": [
+            "QuizAgent",
+            "UniversalSearchTool",
+            "StoryAgent"
+        ],
+        "reference_output": [
+            "QuizAgent",
+            "FunFactAgent"
+        ]
+    }
+]

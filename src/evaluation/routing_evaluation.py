@@ -194,7 +194,7 @@ if __name__ == "__main__":
         print(f"  subset_match rate: {subset_total / n * 100:.1f}%")
         print(f"  mean precision: {precision_total / n:.2f}")
         print(f"  mean recall: {recall_total / n:.2f}")
-        print("\nPer-label precision and recall:")
+        print("\nPer-agent precision and recall:")
         for label in sorted(all_labels):
             tp = label_stats[label]["tp"]
             fp = label_stats[label]["fp"]

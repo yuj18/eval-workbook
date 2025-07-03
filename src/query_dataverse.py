@@ -72,7 +72,7 @@ data = entity.read(
 )
 
 for item_index, item in enumerate(data):
-    print(f"\n--------------------- Bot Component {item_index} -----------------------")
+    print(f"\n------------------- Bot Component {item_index} --------------------")
     print(f"\nName: {item['name']}")
     print(f"\nSchema Name: {item['schemaname']}")
     print(f"\nDescription: {item['description']}")

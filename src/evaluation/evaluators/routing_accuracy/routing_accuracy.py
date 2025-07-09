@@ -1,4 +1,7 @@
+import logging
 from typing import List, Set, TypedDict
+
+logger = logging.getLogger(__name__)
 
 EVALUATOR_NAME = "RoutingAccuracyEvaluator"
 EVALUATOR_DESCRIPTION = (
@@ -250,14 +253,60 @@ class RoutingAccuracyEvaluator:
             if step["type"] in self._step_types_to_evaluate
         ]
 
-        print(f"Evaluating route: {route_to_evaluate}")
-        print(f"Against reference route: {reference_route_to_evaluate}")
-
         result = self._evaluate(
             route=route_to_evaluate,
             reference_route=reference_route_to_evaluate,
         )
         return result
+
+    def __aggregate__(self, results: List):
+        """
+        Aggregate precision, recall, and support for each agent from a list of
+        result dicts. Each dict should have the key
+        'outputs.RoutingAccuracyEvaluator.step_stats'.
+        Returns a flat dict: {agent}_precision, {agent}_recall, {agent}_tp, etc.
+        Support is defined as tp + fn (number of reference positives).
+        """
+        agent_stats = {}
+        for idx, record in enumerate(results):
+            step_stats = record["step_stats"]
+            for agent, stats in step_stats.items():
+                if agent not in agent_stats:
+                    agent_stats[agent] = {"tp": 0, "fp": 0, "fn": 0}
+                agent_stats[agent]["tp"] += stats.get("tp", 0)
+                agent_stats[agent]["fp"] += stats.get("fp", 0)
+                agent_stats[agent]["fn"] += stats.get("fn", 0)
+        agent_matrics = {}
+        for agent, stats in agent_stats.items():
+            tp = stats["tp"]
+            fp = stats["fp"]
+            fn = stats["fn"]
+            support = tp + fn
+            if (tp + fp) > 0:
+                precision = tp / (tp + fp)
+            elif (tp + fp + fn) == 0:
+                precision = 1.0
+            else:
+                precision = 0.0
+            if (tp + fn) > 0:
+                recall = tp / (tp + fn)
+            elif (tp + fp + fn) == 0:
+                recall = 1.0
+            else:
+                recall = 0.0
+            agent_matrics[f"{agent}_precision"] = round(precision, 2)
+            agent_matrics[f"{agent}_recall"] = round(recall, 2)
+            agent_matrics[f"{agent}_tp"] = tp
+            agent_matrics[f"{agent}_fp"] = fp
+            agent_matrics[f"{agent}_fn"] = fn
+            agent_matrics[f"{agent}_support"] = support
+            logger.info(
+                f"Agent stats: name={agent}, "
+                f"precision={precision}, recall={recall}, "
+                f"tp={tp}, fp={fp}, fn={fn}, support={support}"
+            )
+
+        return agent_matrics
 
 
 # Usage example:

@@ -233,8 +233,8 @@ class RoutingAccuracyEvaluator:
         """
         Evaluate the routing accuracy of the given route against the reference route.
         Args:
-            route (List[str]): The actual route taken.
-            reference_route (List[str]): The expected route to match against.
+            route (List[dict]): The route to evaluate.
+            reference_route (List[dict]): The expected route to match against.
         Returns:
             RoutingAccuracyResult: A dictionary containing evaluation metrics.
         """

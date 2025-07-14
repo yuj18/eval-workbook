@@ -33,15 +33,12 @@ class RoutingAccuracyEvaluator:
     unordered match, superset match, subset match, precision, recall, and step stats.
     """
 
-    def __init__(self, step_types_to_evaluate=["agent"]):
+    def __init__(self, step_types_to_evaluate: list = ["agent"]):
         """
         Initialize the evaluator with optional step types to evaluate.
         If step_types_to_evaluate is provided, only those steps will be evaluated.
         """
-        if step_types_to_evaluate:
-            self._step_types_to_evaluate = step_types_to_evaluate
-        else:
-            raise ValueError("step_types_to_evaluate cannot be empty.")
+        self._step_types_to_evaluate = step_types_to_evaluate
 
     def _ordered_match(self, route: List[str], reference_route: List[str]) -> int:
         """

@@ -29,6 +29,10 @@ def register_evaluator(evaluator_cfg, module_name):
     # Path to the evaluator definition script
     # This path is relative to the current file's directory.
     evaluator_path = (Path(__file__).parent / evaluator_cfg["path"]).resolve()
+    # Add the script's directory to sys.path to support local imports
+    script_dir = evaluator_path.parent
+    if str(script_dir) not in sys.path:
+        sys.path.insert(0, str(script_dir))
 
     # Load the class dynamically and register it in sys.modules
     # This allows the class to be imported as if it were a regular module.

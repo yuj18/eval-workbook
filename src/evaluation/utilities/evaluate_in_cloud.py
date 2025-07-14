@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 
+from azure.ai.evaluation import AzureOpenAIModelConfiguration
 from azure.ai.ml import MLClient
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import Dataset, Evaluation, EvaluatorConfiguration
@@ -59,6 +60,14 @@ def configure_evaluator(ml_client, workspace, evaluators_config):
         raise ValueError("No evaluators found in the evaluation configuration.")
 
     evaluator_setting = {}
+    model_config = AzureOpenAIModelConfiguration(
+        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+        azure_deployment=os.environ["MODEL_DEPLOYMENT_NAME"],
+    )
+
+    init_params = {"model_config": model_config}
     for evaluator in evaluators_config:
         evaluator_name = evaluator.get("name")
         if not evaluator_name:
@@ -79,14 +88,27 @@ def configure_evaluator(ml_client, workspace, evaluators_config):
             raise ValueError(
                 f"Data mapping is required for evaluator '{evaluator_name}'."
             )
-        evaluator_setting[evaluator_name] = EvaluatorConfiguration(
-            id=(
+        init_param_keys = evaluator.get("init_params", [])
+        # Validate init_param_keys
+        for key in init_param_keys:
+            if key not in init_params:
+                raise ValueError(
+                    f"Init parameter '{key}' is not defined in the provided "
+                    "init_params."
+                )
+        config_kwargs = {
+            "id": (
                 f"azureml://locations/{workspace.location}/workspaces/"
                 f"{workspace._workspace_id}/models/{evaluator_name}/versions/"
                 f"{evaluator_model.version}"
             ),
-            data_mapping=data_mapping,
-        )
+            "data_mapping": data_mapping,
+        }
+        if init_param_keys:
+            config_kwargs["init_params"] = {
+                key: init_params[key] for key in init_param_keys
+            }
+        evaluator_setting[evaluator_name] = EvaluatorConfiguration(**config_kwargs)
     return evaluator_setting
 
 
@@ -102,6 +124,8 @@ def create_evaluation(project_client, eval_config, data_id, evaluator_setting):
     )
     evaluation_job = project_client.evaluations.create(evaluation=evaluation)
     print(f"Evaluation job submitted with job ID: {evaluation_job.id}")
+    # Optionally, you can wait for the evaluation to complete
+    # evaluation_job.wait_for_completion(show_output=True)
 
     return evaluation_job
 
@@ -127,6 +151,15 @@ def main():
                         "route": "all_steps_planned",
                         "reference_route": "expected_steps"
                     }
+                },
+                {
+                    "name": "LLMJudgedRoutingAccuracyEvaluator",
+                    "version": "latest",
+                    "data_mapping": {
+                        "conversation": "conversation",
+                        "agent_dictionary": "agent_dictionary"
+                    },
+                    "init_params":["model_config"]
                 }
             ]
         }

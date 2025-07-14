@@ -36,7 +36,7 @@ You are an expert in evaluating the routing accuracy of a multi-agent AI assista
 # Routing Accuracy Considerations
 Routing accuracy refers to how well the proposed routing of agents in a way that is likely to help address the user's needs, considering the agent descriptions, the context of the CONVERSATION, and successfulness of the routing.
 Focus on evaluating the potential value and correctness of the ROUTE within the specific context of the given CONVERSATION and AGENT DESCRIPTION, without making assumptions beyond the provided information. 
-In addtion to the correctness of the routing, you should also examine assistance response for system issues, such as system errors, unexpected response or irrelevant escalations, indicating a failure in routing.
+In addition to the correctness of the routing, you should also examine assistant response for system issues, such as system errors, unexpected response or irrelevant escalations, indicating a failure in routing.
 
 Consider the following factors in your evaluation:
 

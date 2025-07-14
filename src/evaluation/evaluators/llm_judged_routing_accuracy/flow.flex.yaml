@@ -1,0 +1,12 @@
+inputs:
+  conversation:
+    type: list
+  agent_dictionary:
+    type: object
+init:
+  model_config:
+    type: object
+  step_types_to_evaluate:
+    type: list
+    default: "['agent']"
+entry: llm_judged_routing_accuracy:LLMJudgedRoutingAccuracyEvaluator

@@ -1,0 +1,10 @@
+inputs:
+  route:
+    type: list
+  reference_route:
+    type: list
+init:
+  step_types_to_evaluate:
+    type: list
+    default: "['agent']"
+entry: routing_accuracy:RoutingAccuracyEvaluator

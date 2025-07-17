@@ -202,10 +202,13 @@ def main():
     evaluator_setting = configure_evaluator(ml_client, workspace, evaluators_config)
 
     # Submit the evaluation job
-    evaluation_job = create_evaluation(project_client, eval_config, data_id, evaluator_setting)
+    evaluation_job = create_evaluation(
+        project_client, eval_config, data_id, evaluator_setting
+    )
 
-    # Save the evaluation job ID to a file for later results retrieval
-    with open("evaluation_job_response.json", "w") as f:
+    # Save the evaluation job ID to a file for result retrieval later
+    eval_run_path = eval_config.get("eval_run_output_path", "eval_run.json")
+    with open(eval_run_path, "w") as f:
         json.dump({"job_id": evaluation_job.id}, f, indent=2)
 
 

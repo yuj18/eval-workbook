@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import mlflow
 
 from azure.ai.ml import MLClient
 from azure.identity import DefaultAzureCredential
@@ -77,6 +78,44 @@ def get_evaluation_results(evaluation_job_id: str) -> list:
         print(f"Error processing evaluation response: {e}")
         return None
 
+def get_evaluation_metrics(evaluation_job_id: str) -> dict:
+    """
+    Get evaluation metrics from AI Hub Project evaluation runs.
+
+    Args:
+        evaluation_job_id (str): The evaluation job ID which is available in the
+        evaluation job creation response.
+
+    Returns:
+        dict: JSON content of the evaluation metrics.
+    """
+    try:
+        ml_client = MLClient(
+            subscription_id=os.environ["AZURE_SUBSCRIPTION_ID"],
+            resource_group_name=os.environ["AZURE_RESOURCE_GROUP"],
+            workspace_name=os.environ["AZURE_HUB_PROJECT_NAME"],
+            credential=DefaultAzureCredential(),
+        )
+
+        # Get the MLflow tracking URI from the workspace
+        workspace = ml_client.workspaces.get(os.environ["AZURE_HUB_PROJECT_NAME"])
+        mlflow.set_tracking_uri(workspace.mlflow_tracking_uri)
+
+        # Get metrics from the MLflow run
+        run = mlflow.get_run(run_id=evaluation_job_id)
+        metrics = run.data.metrics
+
+        if metrics:
+            print(f"{len(metrics)} Metrics found for job '{evaluation_job_id}'.")
+            return metrics
+        else:
+            print(f"No metrics found for job '{evaluation_job_id}'.")
+
+    except Exception as e:
+        print(f"Error retrieving job {evaluation_job_id}: {e}")
+        return None
+
+
 
 def main():
     """
@@ -106,7 +145,8 @@ def main():
     with open(args.config, "r") as f:
         config = json.load(f)
     input_path = config["input_path"]
-    output_path = config["output_path"]
+    results_output_path = config.get("results_output_path", "evaluation_results.json")
+    metrics_output_path = config.get("metrics_output_path", "evaluation_metrics.json")
 
     with open(input_path, "r") as f:
         evaluation_response = json.load(f)
@@ -118,11 +158,20 @@ def main():
         results = get_evaluation_results(evaluation_job_id)
         if results:
             print("Evaluation results retrieved successfully.")
-            with open(output_path, "w") as f:
+            with open(results_output_path, "w") as f:
                 json.dump(results, f, indent=4)
-            print(f"Results saved to {output_path}")
+            print(f"Results saved to {results_output_path}")
         else:
             print("No results found or an error occurred.")
+
+        metrics = get_evaluation_metrics(evaluation_job_id)
+        if metrics:
+            print("Evaluation metrics retrieved successfully.")
+            with open(metrics_output_path, "w") as f:
+                json.dump(metrics, f, indent=4)
+            print(f"Metrics saved to {metrics_output_path}")
+        else:
+            print("No metrics found or an error occurred.")
     else:
         print("No evaluation job ID found in the provided input file.")
 

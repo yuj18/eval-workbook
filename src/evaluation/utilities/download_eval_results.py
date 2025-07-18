@@ -125,7 +125,8 @@ def main():
     Config structure:
         {
             "input_path": "eval_run.json",  # Path to input JSON with 'job_id'
-            "output_path": "evaluation_results.json",  # Path to save output JSON
+            "results_output_path": "evaluation_results.json",  # Path to save output JSON for evaluation results
+            "metrics_output_path": "evaluation_metrics.json",  # Path to save output JSON for evaluation metrics
             "notes": (
                 "Paths are relative to the parent directory of "
                 "download_eval_results.py. Input JSON should contain a 'job_id' key "

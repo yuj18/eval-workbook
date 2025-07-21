@@ -60,13 +60,16 @@ def configure_evaluator(ml_client, workspace, evaluators_config):
         raise ValueError("No evaluators found in the evaluation configuration.")
 
     evaluator_setting = {}
-    model_config = AzureOpenAIModelConfiguration(
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-        api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-        azure_deployment=os.environ["MODEL_DEPLOYMENT_NAME"],
-    )
 
+    # Prepare the model configuration for LLM based evaluators.
+    model_config = {
+        "subscription_id": os.environ["AZURE_SUBSCRIPTION_ID"],
+        "resource_group": os.environ["AZURE_RESOURCE_GROUP"],
+        "project_name": os.environ["AZURE_HUB_PROJECT_NAME"],
+        "connection_name": os.environ["AZURE_OPENAI_CONNECTION_NAME"],
+        "azure_deployment": os.environ["MODEL_DEPLOYMENT_NAME"],
+        "api_version": os.environ["AZURE_OPENAI_API_VERSION"],
+    }
     init_params = {"model_config": model_config}
     for evaluator in evaluators_config:
         evaluator_name = evaluator.get("name")
@@ -143,6 +146,7 @@ def main():
                 "name": "interactive_conversations_test",
                 "version": "latest"
             },
+            "eval_run_output_path": "eval_run.json",
             "evaluators": [
                 {
                     "name": "RoutingAccuracyEvaluator",

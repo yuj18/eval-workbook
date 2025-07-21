@@ -4,10 +4,9 @@ import logging
 import os
 from typing import TypedDict
 
-from azure.ai.evaluation import AzureOpenAIModelConfiguration
 from dotenv import load_dotenv
 from promptflow.core._flow import AsyncPrompty
-from utils import extract_agent_info, extract_conversation
+from utils import extract_agent_info, extract_conversation, normalize_model_config
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -28,20 +27,25 @@ class LLMJudgedRoutingAccuracyResult(TypedDict):
 
 
 class LLMJudgedRoutingAccuracyEvaluator:
-    def __init__(self, model_config, step_types_to_evaluate: list = ["agent"]):
+    def __init__(self, model_config: dict, step_types_to_evaluate: list = ["agent"]):
         """
         Initialize the evaluator with the model config and step types to evaluate.
 
         Args:
-            model_config (AzureOpenAIModelConfiguration): Azure OpenAI LLM config.
+            model_config (dict): Azure OpenAI model configuration, see
+            normalize_model_config for dictionary schema requirements.
             step_types_to_evaluate (list, optional):Step types to include in evaluation.
         """
         current_dir = os.path.dirname(__file__)
         prompty_path = os.path.join(current_dir, "llm_judged_routing_accuracy.prompty")
 
+        model_config = normalize_model_config(model_config)
+
         self._flow = AsyncPrompty.load(
-            source=prompty_path, model={"configuration": model_config}
+            source=prompty_path,
+            model={"configuration": model_config},
         )
+
         self._step_types_to_evaluate = step_types_to_evaluate
 
     async def evaluate(
@@ -77,6 +81,7 @@ class LLMJudgedRoutingAccuracyEvaluator:
             conversation, self._step_types_to_evaluate
         )
         agent_description = extract_agent_info(agent_dictionary)
+
         return asyncio.run(
             self.evaluate(
                 conversation=formatted_conversation, agent_description=agent_description
@@ -88,12 +93,14 @@ class LLMJudgedRoutingAccuracyEvaluator:
 
 if __name__ == "__main__":
 
-    model_config = AzureOpenAIModelConfiguration(
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-        api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-        azure_deployment=os.environ["MODEL_DEPLOYMENT_NAME"],
-    )
+    model_config = {
+        "subscription_id": os.environ["AZURE_SUBSCRIPTION_ID"],
+        "resource_group": os.environ["AZURE_RESOURCE_GROUP"],
+        "project_name": os.environ["AZURE_HUB_PROJECT_NAME"],
+        "connection_name": os.environ["AZURE_OPENAI_CONNECTION_NAME"],
+        "azure_deployment": os.environ["MODEL_DEPLOYMENT_NAME"],
+        "api_version": os.environ["AZURE_OPENAI_API_VERSION"],
+    }
 
     evaluator = LLMJudgedRoutingAccuracyEvaluator(model_config=model_config)
 

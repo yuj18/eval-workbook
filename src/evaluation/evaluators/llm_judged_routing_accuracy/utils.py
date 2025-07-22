@@ -1,8 +1,89 @@
+import os
 import re
+from typing import Optional, TypedDict
 
+from azure.ai.evaluation import AzureOpenAIModelConfiguration
+from azure.ai.ml import MLClient
+from azure.ai.ml.identity import AzureMLOnBehalfOfCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+class ModelConfigInput(TypedDict):
+    subscription_id: str
+    resource_group: str
+    project_name: str
+    connection_name: str
+    azure_deployment: str
+    api_version: Optional[str]
+
+
+def normalize_model_config(
+    model_config_input: ModelConfigInput,
+) -> AzureOpenAIModelConfiguration:
+    """
+    Create and return a normalized Azure OpenAI model configuration.
+    Args:
+        model_config_input (ModelConfigInput): Model configuration input.
+    Returns:
+        AzureOpenAIModelConfiguration: A normalized model configuration object.
+    """
+
+    subscription_id = model_config_input["subscription_id"]
+    resource_group = model_config_input["resource_group"]
+    project_name = model_config_input["project_name"]
+    connection_name = model_config_input["connection_name"]
+    azure_deployment = model_config_input["azure_deployment"]
+    api_version = model_config_input.get("api_version")
+
+    if os.environ.get("AZURE_OPENAI_API_KEY") and os.environ.get(
+        "AZURE_OPENAI_ENDPOINT"
+    ):
+        api_key = os.environ["AZURE_OPENAI_API_KEY"]
+        azure_endpoint = os.environ["AZURE_OPENAI_ENDPOINT"]
+    else:
+        try:
+            # Use default Azure credential to retrieve connection details.
+            ml_client = MLClient(
+                subscription_id=subscription_id,
+                resource_group_name=resource_group,
+                workspace_name=project_name,
+                credential=DefaultAzureCredential(),
+            )
+
+            connection = ml_client.connections.get(
+                name=connection_name, populate_secrets=True
+            )
+            api_key = connection.credentials.get("key", None)
+            azure_endpoint = connection.api_base
+        except Exception:
+            # Fallback to AzureMLOnBehalfOfCredential if DefaultAzureCredential fails.
+            # This credential is used for scenarios where the application is running
+            # on Azure Foundry Hub project managed compute.
+            ml_client = MLClient(
+                subscription_id=subscription_id,
+                resource_group_name=resource_group,
+                workspace_name=project_name,
+                credential=AzureMLOnBehalfOfCredential(),
+            )
+            connection = ml_client.connections.get(
+                name=connection_name, populate_secrets=True
+            )
+            api_key = connection.credentials.get("key", None)
+            azure_endpoint = connection.api_base
+
+    model_config = AzureOpenAIModelConfiguration(
+        azure_endpoint=azure_endpoint or os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_version=api_version
+        or os.environ["AZURE_OPENAI_API_VERSION"]
+        or "2025-01-01-preview",
+        api_key=api_key,
+        azure_deployment=azure_deployment,
+    )
+
+    return model_config
 
 
 def extract_conversation(
